@@ -3,7 +3,7 @@ export const SERVER_PORT = 3000; // Server port
 export const DEBUG = true; // Debug mode
 
 
-export const CACHING_ENABLED = false; // use a cache of 100 most recent answers
+export const CACHING_ENABLED = true; // use a cache of 100 most recent answers
 
 // Rate limit
 export const PRIOD = 5 * 1000; // 15 seconds

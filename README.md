@@ -6,7 +6,18 @@ https://github.com/PawanOsman/ChatGPT
 
 Acts as a proxy for OpenAI HTTP calls (and the python library) and directs to a set of Azure OpenAI Keys.
 
-Round Robin load balancing, response caching, single use semaphores for each key, and rate limiting are implemented. 
+This Proxy
+* only currently works for the /chat/completion part of OpenAI
+* lets you specify multiple Azure keys
+* randomly load balances all requests across those keys
+* creates a semaphore for each key, so they only see one concurrent use
+* caches responses in-memory for the 100 most recent calls
+
+TODO - not yet implemented
+* timeout logic for when Azure never response ... which happens
+* configurable concurrency for the semaphore
+* better emulation of OpenAI errors so that users get deeper information on why something didn't work, at present the errors are mostly obscured by the proxy.
+
 
 ### First add your keys
 

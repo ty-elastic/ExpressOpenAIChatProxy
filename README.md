@@ -1,12 +1,20 @@
+# ExpressOpenAIChatProxy
 
 This project is based on the code From Pawan Osman here. The original license
 is copied below.
 https://github.com/PawanOsman/ChatGPT
 
-To run locally
+Acts as a proxy for OpenAI HTTP calls (and the python library) and directs to a set of Azure OpenAI Keys.
+
+Round Robin load balancing, response caching, single use semaphores for each key, and rate limiting are implemented. 
+
+### First add your keys
 
 Add your Azure keys to ```config.js```
 
+
+
+### To run locally
 
 ```bash
 npm install
@@ -17,6 +25,21 @@ and then
 ```bash
 npm start
 ```
+
+
+### To run in docker
+
+```bash
+bash build.sh
+```
+
+and then
+
+```bash
+bash runDocker.sh
+```
+
+### to test
 
 use the api by sending queries to
 

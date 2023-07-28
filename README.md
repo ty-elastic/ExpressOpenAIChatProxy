@@ -1,4 +1,8 @@
 
+This project is based on the code From Pawan Osman here. The original license
+is copied below.
+https://github.com/PawanOsman/ChatGPT
+
 To run locally
 
 Add your Azure keys to ```config.js```

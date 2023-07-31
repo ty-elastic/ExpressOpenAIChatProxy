@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Configuration, OpenAIApi } from "openai";
-import { streamCompletion, generateId, getOpenAIKey, getAzureAIDeployment } from "./functions.js"
+import { streamCompletion, generateId, getOpenAIKey, getAzureAIDeployment,getAllSemaphoreStatus } from "./functions.js"
 import { DEBUG, CACHING_ENABLED } from "./config.js";
 
 
@@ -47,6 +47,7 @@ async function adaptOpenAIChatCompletion(req, res) {
         const cache_reponse = getFromCache(req.body);
         if(cache_reponse){
             if(DEBUG) console.log("  Returning cached reponse")
+            req.app.locals.apm.setLabel("servedBy","cache");
             return res.status(200).send(cache_reponse.data);
         }
     }
@@ -55,7 +56,9 @@ async function adaptOpenAIChatCompletion(req, res) {
     let deployment = null;
     try {
         deployment = getAzureAIDeployment();
+        req.app.locals.apm.setLabel("servedBy",deployment.deployment_name);
     } catch (e) {
+        req.app.locals.apm.setLabel("servedBy","semaphoresLocked");
         return res.status(429).send({
             status: false,
             error: "Too many requests, please try again later"
@@ -198,8 +201,27 @@ async function adaptOpenAIChatCompletion(req, res) {
 
 }
 
+
+
+
+async function status(req,res) {
+
+    const cacheLengthUsed = recentResponses.length;
+
+    return res.status(200).send({
+        "proxy-alive": true,
+        "semaphores": getAllSemaphoreStatus(),
+        "cache-enabled": CACHING_ENABLED,
+        "cache-length-used": cacheLengthUsed
+    });
+};
+
+
 export { 
     adaptOpenAIModels,
     adaptOpenAICompletion,
-    adaptOpenAIChatCompletion
+    adaptOpenAIChatCompletion,
+    status
 };
+
+

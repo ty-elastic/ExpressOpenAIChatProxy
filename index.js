@@ -1,11 +1,12 @@
 import apm from 'elastic-apm-node/start.js';
 
 import express, { json, urlencoded } from 'express';
-import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion } from './routes.js';
+import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion, status } from './routes.js';
 import { corsMiddleware, rateLimitMiddleware, loggingMiddleware, responseLogMiddleware } from './middlewares.js';
 import { DEBUG, SERVER_PORT } from './config.js';
 
 let app = express();
+app.locals.apm = apm;
 
 process.on("uncaughtException", function (err) {
     if (DEBUG) console.error(`Caught exception: ${err}`);
@@ -26,10 +27,11 @@ app.all("/", async function (req, res) {
     return res.status(200).send({
         status: true,
         message: "Proxy to OpenAI target: BASE_URL/v1"
-        // github: "https://github.com/PawanOsman/ChatGPT",
-        // discord: "https://discord.pawan.krd"
     });
 });
+
+app.get("/status", status);
+
 app.get("/v1/models", adaptOpenAIModels);
 app.post("/v1/completions", adaptOpenAICompletion);
 app.post("/v1/chat/completions", adaptOpenAIChatCompletion);
@@ -37,5 +39,5 @@ app.post("/v1/chat/completions", adaptOpenAIChatCompletion);
 
 // Start server
 app.listen(SERVER_PORT, () => {
-    console.log(`Listening on ${SERVER_PORT} ...`);
+    console.log(`Proxy server starting and Listening on ${SERVER_PORT} ...`);
 });

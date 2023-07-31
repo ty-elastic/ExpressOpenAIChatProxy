@@ -46,34 +46,52 @@ function getOpenAIKey() {
 // Utility function to create a semaphore
 function createSemaphore(maxConnections) {
     let connections = 0;
+    let metric_lockHits = 0;
+    let metric_acquired_lock = 0;
+    let metric_released_lock = 0;
     const queue = [];
   
     const tryAcquire = () => {
       if (connections >= maxConnections) {
         return false;
+        metric_lockHits++
       } else {
         connections++;
+        metric_acquired_lock++;
         return true;
       }
     };
   
     const release = () => {
       connections--;
+      metric_released_lock++;
       if (queue.length > 0) {
         queue.shift()();
       }
+    };
+
+    const semaphoreStatus = () => {
+        const lockStatus = (connections >= maxConnections) ? "locked" : "unlocked";
+        return {
+            "lockStatus" : lockStatus,
+            "metric_lockHits": metric_lockHits,
+            "metric_acquired_lock": metric_acquired_lock,
+            "metric_released_lock": metric_released_lock,
+            "current_connectons": connections,
+        }
     };
   
     return {
       tryAcquire,
       release,
+      semaphoreStatus,
     };
 }
 
 AZURE_LLM_DEPLOYMENTS.forEach((deployment) => {
-    console.log("Making a semaphore");
     deployment.semaphore = createSemaphore(1);
 });
+console.log(`Generating ${AZURE_LLM_DEPLOYMENTS.length} semaphores for Azure connections`);
 
 
 function getAzureAIDeployment() {
@@ -94,4 +112,18 @@ function getAzureAIDeployment() {
     
 }
 
-export { generateId, getOpenAIKey, streamCompletion, getAzureAIDeployment }
+function getAllSemaphoreStatus() {
+    const status = [];
+
+    AZURE_LLM_DEPLOYMENTS.forEach((deployment) => {
+        status.push( {
+            "deployment_name": deployment.deployment_name,
+            "type": deployment.type,
+            "status": deployment.semaphore.semaphoreStatus(),
+        } );
+    });
+
+    return status;
+}
+
+export { generateId, getOpenAIKey, streamCompletion, getAzureAIDeployment, getAllSemaphoreStatus }

@@ -24,33 +24,36 @@ function loggingMiddleware(req, res, next) {
 
 async function rateLimitMiddleware(req, res, next) {
     if (DEBUG) console.log(rateLimit);
-    let ip = req.headers['authorization'] || req.headers['Authorization']; //req.headers["CF-Connecting-IP"] ?? req.headers["cf-connecting-ip"] ?? req.headers["X-Forwarded-For"] ?? req.headers["x-forwarded-for"] ?? req.ip;
+    let ip = req.headers["CF-Connecting-IP"] ?? req.headers["cf-connecting-ip"] ?? req.headers["X-Forwarded-For"] ?? req.headers["x-forwarded-for"] ?? req.ip;
+    let auth = req.headers['authorization'] ?? req.headers['Authorization'] ?? "unknown-auth";
+    let rate_key = `${ip} ${auth}` 
     if (WHITELISTED_IPS.includes(ip)) return next();
-    if (!rateLimit.has(ip)) {
-        rateLimit.set(ip, {
+    if (!rateLimit.has(rate_key)) {
+        rateLimit.set(rate_key, {
             requests: 1,
             lastRequestTime: Date.now()
         });
     } else {
         const currentTime = Date.now();
-        const timeSinceLastRequest = currentTime - rateLimit.get(ip).lastRequestTime;
+        const timeSinceLastRequest = currentTime - rateLimit.get(rate_key).lastRequestTime;
         if (timeSinceLastRequest > PRIOD) {
-            rateLimit.set(ip, {
+            rateLimit.set(rate_key, {
                 requests: 1,
                 lastRequestTime: currentTime
             });
         } else {
-            let updatedCount = rateLimit.get(ip).requests + 1;
+            let updatedCount = rateLimit.get(rate_key).requests + 1;
             if (updatedCount > RATE_LIMIT) {
-                if (DEBUG)  console.log("throttling ip: ",ip)
+                if (DEBUG)  console.log("throttling key: ",rate_key)
+                req.app.locals.apm.setLabel("servedBy","throttle");
                 return res.status(429).send({
                     status: false,
                     error: "Too many requests, please try again later"
                 });
             }
-            rateLimit.set(ip, {
+            rateLimit.set(rate_key, {
                 requests: updatedCount,
-                lastRequestTime: rateLimit.get(ip).lastRequestTime
+                lastRequestTime: rateLimit.get(rate_key).lastRequestTime
             });
         }
     }

@@ -1,1 +1,1 @@
-docker run -d -p 3000:3000 node-llm-proxy
+docker run -d --restart=unless-stopped     -p 80:3000 --name node-llm-proxy node-llm-proxy

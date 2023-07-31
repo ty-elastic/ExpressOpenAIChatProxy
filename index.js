@@ -1,4 +1,4 @@
-var apm = require('elastic-apm-node').start()
+import apm from 'elastic-apm-node/start.js';
 
 import express, { json, urlencoded } from 'express';
 import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion } from './routes.js';
@@ -9,13 +9,14 @@ let app = express();
 
 process.on("uncaughtException", function (err) {
     if (DEBUG) console.error(`Caught exception: ${err}`);
+    apm.captureError(err);
 });
 
 // Middlewares
 app.use(corsMiddleware);
 app.use(rateLimitMiddleware);
 app.use(json());
-// if(DEBUG) app.use(loggingMiddleware);
+if(DEBUG) app.use(loggingMiddleware);
 app.use(responseLogMiddleware);
 app.use(urlencoded({ extended: true }));
 

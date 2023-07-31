@@ -23,11 +23,17 @@ TODO - not yet implemented
 
 Add your Azure keys to ```config.js```
 
-add your APM settings to runDocker.sh
 
 
 
 ### To run locally
+
+setup a .env file that looks like this
+```bash
+export ELASTIC_APM_SERVICE_NAME=local-llm-proxy
+export ELASTIC_APM_SECRET_TOKEN=<your key>
+export ELASTIC_APM_SERVER_URL=<your apm server>
+```
 
 ```bash
 npm install
@@ -41,6 +47,9 @@ npm start
 
 
 ### To run in docker
+
+add your APM settings to runDocker.sh
+
 
 ```bash
 bash build.sh

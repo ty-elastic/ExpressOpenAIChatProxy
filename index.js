@@ -1,3 +1,5 @@
+var apm = require('elastic-apm-node').start()
+
 import express, { json, urlencoded } from 'express';
 import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion } from './routes.js';
 import { corsMiddleware, rateLimitMiddleware, loggingMiddleware, responseLogMiddleware } from './middlewares.js';

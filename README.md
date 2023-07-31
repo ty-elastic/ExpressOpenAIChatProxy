@@ -19,9 +19,11 @@ TODO - not yet implemented
 * better emulation of OpenAI errors so that users get deeper information on why something didn't work, at present the errors are mostly obscured by the proxy.
 
 
-### First add your keys
+### First add your keys and settings
 
 Add your Azure keys to ```config.js```
+
+add your APM settings to runDocker.sh
 
 
 

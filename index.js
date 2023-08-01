@@ -20,6 +20,7 @@ app.use(json());
 if(DEBUG) app.use(loggingMiddleware);
 app.use(responseLogMiddleware);
 app.use(urlencoded({ extended: true }));
+app.locals.startTime = new Date();
 
 // Register routes
 app.all("/", async function (req, res) {

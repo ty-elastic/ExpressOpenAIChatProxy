@@ -1,6 +1,6 @@
 import axios from "axios";
 import { Configuration, OpenAIApi } from "openai";
-import { streamCompletion, generateId, getOpenAIKey, getAzureAIDeployment,getAllSemaphoreStatus } from "./functions.js"
+import { streamCompletion, generateId, getOpenAIKey, getAzureAIDeployment,getAllSemaphoreStatus, generateAccessKey,generateAccessKeyRange } from "./functions.js"
 import { DEBUG, CACHING_ENABLED } from "./config.js";
 
 
@@ -208,11 +208,25 @@ async function status(req,res) {
 
     const cacheLengthUsed = recentResponses.length;
 
+    const now = new Date();
+    const ms =  now - req.app.locals.startTime;
+    const seconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    const currentDate = new Date();
+    const access_key = generateAccessKey(currentDate, "AAA");
+    const access_keys = generateAccessKeyRange(currentDate);
+
     return res.status(200).send({
         "proxy-alive": true,
-        "semaphores": getAllSemaphoreStatus(),
+        "access-key": access_key,
+        "access_keys": access_keys,
+        "uptime": `${days} days, ${hours}, ${minutes} min, ${seconds} seconds`,
         "cache-enabled": CACHING_ENABLED,
-        "cache-length-used": cacheLengthUsed
+        "cache-length-used": cacheLengthUsed,
+        "semaphores": getAllSemaphoreStatus(),
     });
 };
 

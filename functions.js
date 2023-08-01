@@ -1,4 +1,46 @@
-import { DEBUG, AZURE_LLM_DEPLOYMENTS } from "./config.js";
+import { DEBUG, CONCURRENT_PROMPTS, AZURE_LLM_DEPLOYMENTS, SALT, REVOKE_KEY_AFTER } from "./config.js";
+
+import pkg from 'crypto-js';
+const { MD5 } = pkg;
+
+
+function getDatesBeforeAndAfter(d, n) {
+    const dates = [];
+
+    // Get the day after d
+    const today = new Date(d);
+    dates.push(today);
+  
+    // Get n days after d
+    for (let i = 1; i <= n; i++) {
+      const nDaysBefore = new Date(d);
+      nDaysBefore.setDate(nDaysBefore.getDate() - i);
+      dates.push(nDaysBefore);
+    }
+  
+    return dates;
+  }
+
+function generateAccessKeyRange(dateObj){
+    const datesBeforeAndAfter = getDatesBeforeAndAfter(dateObj, REVOKE_KEY_AFTER);
+
+    const retVals = [];
+
+    for (const date of datesBeforeAndAfter) {
+        retVals.push(generateAccessKey(date));
+    }
+
+    return retVals;
+
+}
+
+function generateAccessKey(dateObj) {
+    let iso8601DateString = dateObj.toISOString().slice(0, 10);
+    let combinedString = iso8601DateString +"-"+ SALT;
+    let hash = MD5(combinedString).toString();
+    return hash;
+}
+
 
 async function* chunksToLines(chunksAsync) {
     let previous = "";
@@ -89,7 +131,7 @@ function createSemaphore(maxConnections) {
 }
 
 AZURE_LLM_DEPLOYMENTS.forEach((deployment) => {
-    deployment.semaphore = createSemaphore(1);
+    deployment.semaphore = createSemaphore(CONCURRENT_PROMPTS);
 });
 console.log(`Generating ${AZURE_LLM_DEPLOYMENTS.length} semaphores for Azure connections`);
 
@@ -126,4 +168,4 @@ function getAllSemaphoreStatus() {
     return status;
 }
 
-export { generateId, getOpenAIKey, streamCompletion, getAzureAIDeployment, getAllSemaphoreStatus }
+export { generateId, getOpenAIKey, streamCompletion, getAzureAIDeployment, getAllSemaphoreStatus, generateAccessKey, generateAccessKeyRange }

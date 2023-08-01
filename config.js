@@ -1,9 +1,14 @@
 // Server configuration
 export const SERVER_PORT = 3000; // Server port
-export const DEBUG = true; // Debug mode
+export const DEBUG = false; // Debug mode
 
+export const CONCURRENT_PROMPTS = 1;
 
 export const CACHING_ENABLED = true; // use a cache of 100 most recent answers
+
+export const SALT = "AAAAAAA"; // Change the SALT to make the keys protected
+export const REVOKE_KEY_AFTER = 2; //keys will work for x days
+
 
 // Rate limit
 export const PRIOD = 5 * 1000; // 15 seconds
@@ -25,4 +30,5 @@ export let AZURE_LLM_DEPLOYMENTS = [
     },
     // ADD MORE KEYS HERE
 
+    
 ]

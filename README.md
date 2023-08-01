@@ -42,7 +42,7 @@ npm install
 and then
 
 ```bash
-npm start
+bash runLocal.sh
 ```
 
 

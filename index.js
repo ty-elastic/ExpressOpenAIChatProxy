@@ -3,7 +3,7 @@ import apm from 'elastic-apm-node/start.js';
 import express, { json, urlencoded } from 'express';
 import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion, status } from './routes.js';
 import { corsMiddleware, rateLimitMiddleware, loggingMiddleware, responseLogMiddleware } from './middlewares.js';
-import { DEBUG, SERVER_PORT } from './config.js';
+import { DEBUG, SERVER_PORT, ENABLE_RATE_LIMITER, BASE_URL } from './config.js';
 
 let app = express();
 app.locals.apm = apm;
@@ -15,11 +15,13 @@ process.on("uncaughtException", function (err) {
 
 // Middlewares
 app.use(corsMiddleware);
-app.use(rateLimitMiddleware);
 app.use(json());
+if(ENABLE_RATE_LIMITER) app.use(rateLimitMiddleware);
 if(DEBUG) app.use(loggingMiddleware);
 app.use(responseLogMiddleware);
 app.use(urlencoded({ extended: true }));
+
+// needed to track uptime
 app.locals.startTime = new Date();
 
 // Register routes
@@ -27,7 +29,7 @@ app.all("/", async function (req, res) {
     res.set("Content-Type", "application/json");
     return res.status(200).send({
         status: true,
-        message: "Proxy to OpenAI target: BASE_URL/v1"
+        message: `Proxy to OpenAI target: ${BASE_URL}/v1`
     });
 });
 

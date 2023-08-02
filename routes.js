@@ -10,7 +10,7 @@ import {
     generateAccessKeyRange, 
     checkAuth,
 } from "./functions.js"
-import { DEBUG, CACHING_ENABLED } from "./config.js";
+import { DEBUG, CACHING_ENABLED, CACHE_SIZE, TIMEOUT_MS_BEFORE_GIVEUP } from "./config.js";
 
 
 async function adaptOpenAIModels(req,res) {
@@ -36,7 +36,7 @@ async function adaptOpenAICompletion(req,res) {
 };
 
 
-const MAX_CACHE_SIZE = 100;
+const MAX_CACHE_SIZE = CACHE_SIZE;
 const responseCache = {};
 const recentResponses = [];
 
@@ -88,10 +88,14 @@ async function adaptOpenAIChatCompletion(req, res) {
         req.app.locals.apm.setLabel("servedBy",deployment.deployment_name);
     } catch (e) {
         req.app.locals.apm.setLabel("servedBy","semaphoresLocked");
-        return res.status(429).send({
-            status: false,
-            error: "Too many requests, please try again later"
+        return res.status(429).send( { "error": {
+            "message": "Too many requests to proxy, all keys busy, please try again later",
+            "type": "server_error",
+            "param": null,
+            "code": null
+          }
         });
+        
     }
 
     let orgId = generateId();
@@ -108,9 +112,10 @@ async function adaptOpenAIChatCompletion(req, res) {
     if (req.body.stream) {
         try {
             const response = await axios.post(
-                new_url, req.body,
+                new_url, req.body, 
                 {
                     responseType: "stream",
+                    timeout: TIMEOUT_MS_BEFORE_GIVEUP,
                     headers: {
                         Accept: "text/event-stream",
                         "Content-Type": "application/json",
@@ -180,6 +185,7 @@ async function adaptOpenAIChatCompletion(req, res) {
             const response = await axios.post(
                 new_url, req.body,
                 {
+                    timeout: TIMEOUT_MS_BEFORE_GIVEUP,
                     headers: {
                         Accept: "application/json",
                         "Content-Type": "application/json",

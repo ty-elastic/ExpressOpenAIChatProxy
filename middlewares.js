@@ -46,9 +46,12 @@ async function rateLimitMiddleware(req, res, next) {
             if (updatedCount > RATE_LIMIT) {
                 if (DEBUG)  console.log("throttling key: ",rate_key)
                 req.app.locals.apm.setLabel("servedBy","throttle");
-                return res.status(429).send({
-                    status: false,
-                    error: "Too many requests, please try again later"
+                return res.status(429).send( { "error": {
+                    "message": "Rate limited. Too many requests to proxy from this IP and Key, please try again later",
+                    "type": "server_error",
+                    "param": null,
+                    "code": null
+                  }
                 });
             }
             rateLimit.set(rate_key, {

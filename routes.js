@@ -1,20 +1,37 @@
 import axios from "axios";
 import { Configuration, OpenAIApi } from "openai";
-import { streamCompletion, generateId, getOpenAIKey, getAzureAIDeployment,getAllSemaphoreStatus, generateAccessKey,generateAccessKeyRange } from "./functions.js"
+import { 
+    streamCompletion, 
+    generateId, 
+    getOpenAIKey, 
+    getAzureAIDeployment,
+    getAllSemaphoreStatus, 
+    generateAccessKey,
+    generateAccessKeyRange, 
+    checkAuth 
+} from "./functions.js"
 import { DEBUG, CACHING_ENABLED } from "./config.js";
 
 
 async function adaptOpenAIModels(req,res) {
     return res.status(501).send({
-        status: false,
-        error: "This proxy does not implement that function"
+        "error": {
+          "message": "This proxy does not implement that function",
+          "type": "server_error",
+          "param": null,
+          "code": null
+        }
     });
 };
 
 async function adaptOpenAICompletion(req,res) {
     return res.status(501).send({
-        status: false,
-        error: "This proxy does not implement that function"
+        "error": {
+          "message": "This proxy does not implement that function",
+          "type": "server_error",
+          "param": null,
+          "code": null
+        }
     });
 };
 
@@ -41,7 +58,18 @@ function getFromCache(question){
 
 
 async function adaptOpenAIChatCompletion(req, res) {
-    
+
+    let auth = req.headers['authorization'] ?? req.headers['Authorization'] ?? "unknown-auth";
+    if(!checkAuth(auth)){
+        return res.status(401).send( { "error": {
+            "message": "Invalid authorization header",
+            "type": "server_error",
+            "param": null,
+            "code": null
+          }
+        });
+    }
+
     // Attempt to cache answer
     if(CACHING_ENABLED && !req.body.stream){
         const cache_reponse = getFromCache(req.body);
@@ -127,18 +155,20 @@ async function adaptOpenAIChatCompletion(req, res) {
                     if (DEBUG) console.error("Could not JSON parse stream message", error);
                     deployment.semaphore.release();
                     return res.status(500).send({
-                        status: false,
-                        error: "sProxy Server Error"
-                    });
+                        "error": {
+                            "message": "Proxy Server Error",
+                            "type": "server_error"
+                        }});
                 }
             }
             catch (e) {
                 if (DEBUG) console.log(e);
                 deployment.semaphore.release();
                 return res.status(500).send({
-                    status: false,
-                    error: "Proxy Server Error"
-                });
+                    "error": {
+                        "message": "Proxy Server Error",
+                        "type": "server_error"
+                    }});
             }
         }
     }
@@ -182,9 +212,10 @@ async function adaptOpenAIChatCompletion(req, res) {
                     return res.status(error.response.status).send(error.response.data);
                 } else {
                     return res.status(500).send({
-                        status: false,
-                        error: "Proxy Server Error"
-                    });
+                        "error": {
+                            "message": "Proxy Server Error",
+                            "type": "server_error"
+                        }});
                 }
                 
             }
@@ -192,13 +223,39 @@ async function adaptOpenAIChatCompletion(req, res) {
                 if (DEBUG) console.log(e);
                 deployment.semaphore.release();
                 return res.status(500).send({
-                    status: false,
-                    error: "Proxy Server Error"
-                });
+                    "error": {
+                        "message": "Proxy Server Error",
+                        "type": "server_error"
+                    }});
             }
         }
     }
 
+}
+
+
+function uptimeStrFromMs(ms) {
+    const seconds = Math.floor(ms / 1000) % 60;
+    const minutes = Math.floor(ms / 1000 / 60) % 60;
+    const hours = Math.floor(ms / 1000 / 60 / 60) % 24;
+    const days = Math.floor(ms / 1000 / 60 / 60 / 24);
+
+    const uptimeParts = [];
+
+    if (days > 0) {
+        uptimeParts.push(`${days} day${days > 1 ? 's' : ''}`);
+    }
+    if (hours > 0) {
+        uptimeParts.push(`${hours} hour${hours > 1 ? 's' : ''}`);
+    }
+    if (minutes > 0) {
+        uptimeParts.push(`${minutes} minute${minutes > 1 ? 's' : ''}`);
+    }
+    if (seconds > 0) {
+        uptimeParts.push(`${seconds} second${seconds > 1 ? 's' : ''}`);
+    }
+
+    return uptimeParts.join(', ');
 }
 
 
@@ -210,20 +267,17 @@ async function status(req,res) {
 
     const now = new Date();
     const ms =  now - req.app.locals.startTime;
-    const seconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(seconds / 60);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
+
 
     const currentDate = new Date();
-    const access_key = generateAccessKey(currentDate, "AAA");
+    const access_key = generateAccessKey(currentDate);
     const access_keys = generateAccessKeyRange(currentDate);
 
     return res.status(200).send({
         "proxy-alive": true,
         "access-key": access_key,
         "access_keys": access_keys,
-        "uptime": `${days} days, ${hours}, ${minutes} min, ${seconds} seconds`,
+        "uptime": uptimeStrFromMs(ms),
         "cache-enabled": CACHING_ENABLED,
         "cache-length-used": cacheLengthUsed,
         "semaphores": getAllSemaphoreStatus(),

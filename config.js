@@ -6,6 +6,7 @@ export const CONCURRENT_PROMPTS = 1;
 
 export const CACHING_ENABLED = true; // use a cache of 100 most recent answers
 
+export const ENFORCE_PROXY_KEY = true; // set to false to stop key checks
 export const SALT = "AAAAAAA"; // Change the SALT to make the keys protected
 export const REVOKE_KEY_AFTER = 2; //keys will work for x days
 
@@ -21,13 +22,13 @@ export const WHITELISTED_IPS = [
 
 
 export let AZURE_LLM_DEPLOYMENTS = [
-    {
-        "type": "azure",
-        "api_base": "https://YOURVALUE.api.cognitive.microsoft.com",
-        "deployment_name": "YOURVALUE",
-        "api_version": "2023-05-15",
-        "api_key": "YOURVALUE"
-    },
+    // {
+    //     "type": "azure",
+    //     "api_base": "https://YOURVALUE.api.cognitive.microsoft.com",
+    //     "deployment_name": "YOURVALUE",
+    //     "api_version": "2023-05-15",
+    //     "api_key": "YOURVALUE"
+    // },
     // ADD MORE KEYS HERE
 
     

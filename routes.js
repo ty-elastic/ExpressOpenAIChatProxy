@@ -8,7 +8,7 @@ import {
     getAllSemaphoreStatus, 
     generateAccessKey,
     generateAccessKeyRange, 
-    checkAuth 
+    checkAuth,
 } from "./functions.js"
 import { DEBUG, CACHING_ENABLED } from "./config.js";
 
@@ -70,6 +70,7 @@ async function adaptOpenAIChatCompletion(req, res) {
         });
     }
 
+
     // Attempt to cache answer
     if(CACHING_ENABLED && !req.body.stream){
         const cache_reponse = getFromCache(req.body);
@@ -123,8 +124,9 @@ async function adaptOpenAIChatCompletion(req, res) {
             for await (const message of streamCompletion(response.data)) {
                 try {
                     const parsed = JSON.parse(message);
-                    delete parsed.id;
-                    delete parsed.created;
+                    // delete parsed.id;
+                    parsed.id = orgId;
+                    // delete parsed.created;
                     const { content } = parsed.choices[0].delta;
                     if (content) {
                         res.write(`data: ${JSON.stringify(parsed)}\n\n`);
@@ -185,11 +187,13 @@ async function adaptOpenAIChatCompletion(req, res) {
                     },
                 },
             );
-
+            
+            // delete response.data.id;
+            response.data.id = orgId;
+            // delete response.data.created;
+            
             if(CACHING_ENABLED) addToCache(req.body, response);
-
-            delete response.data.id;
-            delete response.data.created;
+            
             deployment.semaphore.release();
             return res.status(200).send(response.data);
         } catch (error) {

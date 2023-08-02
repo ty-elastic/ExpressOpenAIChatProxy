@@ -52,7 +52,7 @@ function generateAccessKey(dateObj) {
 function startsWithAny(a, b) {
     for (const prefix of b) {
       let actualCheck = `Bearer ${prefix}`;
-      console.log(`comparing ${a} and ${actualCheck}`)
+    //   console.log(`comparing ${a} and ${actualCheck}`)
       if (a.startsWith(actualCheck)) {
         return true;
       }
@@ -194,6 +194,7 @@ function getAllSemaphoreStatus() {
     return status;
 }
 
+
 export { 
     generateId, 
     getOpenAIKey, 
@@ -202,5 +203,5 @@ export {
     getAllSemaphoreStatus, 
     generateAccessKey, 
     generateAccessKeyRange, 
-    checkAuth 
+    checkAuth,
 }

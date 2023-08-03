@@ -6,17 +6,26 @@ https://github.com/PawanOsman/ChatGPT
 
 Acts as a proxy for OpenAI HTTP calls (and the python library) and directs to a set of Azure OpenAI Keys.
 
+Once launched the proxy is self-documenting, including a python notebook for google colab.  see / or /docs/ once the server is started.
+
+The proxy is bearer token protected. instructors get the current token from the /status page
+
 This Proxy
 * only currently works for the /chat/completion part of OpenAI
 * lets you specify multiple Azure keys
 * randomly load balances all requests across those keys
 * creates a semaphore for each key, so they only see one concurrent use
 * caches responses in-memory for the 100 most recent calls
-
-TODO - not yet implemented
 * timeout logic for when Azure never response ... which happens
 * configurable concurrency for the semaphore
+
+TODO - not yet implemented
 * better emulation of OpenAI errors so that users get deeper information on why something didn't work, at present the errors are mostly obscured by the proxy.
+* more thorough testing for streaming responses
+* some internal backoff if all semaphores are taken
+* better telemetry on token usage to elastic dashboard
+* test and make work with elastic observability assistant
+* make work with huggingface inference
 
 
 ### First add your keys and settings

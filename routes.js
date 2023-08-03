@@ -3,7 +3,6 @@ import { Configuration, OpenAIApi } from "openai";
 import { 
     streamCompletion, 
     generateId, 
-    getOpenAIKey, 
     getAzureAIDeployment,
     getAllSemaphoreStatus, 
     generateAccessKey,
@@ -59,7 +58,12 @@ function getFromCache(question){
 
 async function adaptOpenAIChatCompletion(req, res) {
 
+    // get the OpenAI style auth header
     let auth = req.headers['authorization'] ?? req.headers['Authorization'] ?? "unknown-auth";
+    // remove anything from the value that isn't an alphanumeric, _, -, or space to prevent injection attack
+    if(auth) auth = auth.replace(/[^a-zA-Z0-9-_\s]/g, '');
+
+    // if key checking is turned on, check the key
     if(!checkAuth(auth)){
         return res.status(401).send( { "error": {
             "message": "Invalid authorization header",
@@ -71,7 +75,7 @@ async function adaptOpenAIChatCompletion(req, res) {
     }
 
 
-    // Attempt to cache answer
+    // If we have a response cache, check to see if we already have the answer
     if(CACHING_ENABLED && !req.body.stream){
         const cache_reponse = getFromCache(req.body);
         if(cache_reponse){
@@ -81,7 +85,7 @@ async function adaptOpenAIChatCompletion(req, res) {
         }
     }
 
-    // OpenAI incoming to Azure outgoing chat completion
+    // Get an Azure deployment. if an error is thrown, there were none available
     let deployment = null;
     try {
         deployment = getAzureAIDeployment();
@@ -98,7 +102,10 @@ async function adaptOpenAIChatCompletion(req, res) {
         
     }
 
+    // OpenAI responses return a key, to prevent strongly typed clients having troube, return a fake org key
     let orgId = generateId();
+
+    // the key is the API key of the deployment owned by the proxy (not the user's key)
     let key = deployment["api_key"];
 
     // const new_url = deployment["api_key"] + req.url;
@@ -109,6 +116,7 @@ async function adaptOpenAIChatCompletion(req, res) {
 
     res['deployment_name'] = deployment_name;
 
+    // the proxy code for a streamed OpenAI return
     if (req.body.stream) {
         try {
             const response = await axios.post(
@@ -179,7 +187,7 @@ async function adaptOpenAIChatCompletion(req, res) {
             }
         }
     }
-    else {
+    else { // the proxy code for a not-streamed OpenAI return
         try {
 
             const response = await axios.post(

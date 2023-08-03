@@ -8,6 +8,25 @@ import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion, s
 import { corsMiddleware, rateLimitMiddleware, loggingMiddleware, responseLogMiddleware } from './middlewares.js';
 import { DEBUG, SERVER_PORT, ENABLE_RATE_LIMITER, BASE_URL,ENFORCE_PROXY_KEY } from './config.js';
 
+import passport from 'passport';
+import {BasicStrategy} from 'passport-http';
+import {userAuth} from './userAuth.js'; 
+
+passport.use(new BasicStrategy(
+    function(userid, password, done) {
+        const user = userAuth.findUserByUsername(userid);
+        if (user) {
+            if (userAuth.isValidPassword(user, password)) {
+                return done(null, user);
+            } else {
+                return done(null, false);
+            }
+        } else {
+            return done(null,false);
+        }
+    }
+));
+
 let app = express();
 app.locals.apm = apm;
 
@@ -39,11 +58,6 @@ app.locals.startTime = new Date();
 
 // // Register routes
 app.all("/", async function (req, res) {
-    // res.set("Content-Type", "application/json");
-    // return res.status(200).send({
-    //     status: true,
-    //     message: `Proxy to OpenAI target: ${BASE_URL}/v1`
-    // });
     return res.redirect("/docs");
 });
 
@@ -56,7 +70,7 @@ const webConfig = {
     res.render('documentation', { data: webConfig });
   });
 
-app.get("/status", status);
+app.get("/status", passport.authenticate('basic', { session: false }), status);
 
 app.get("/v1/models", adaptOpenAIModels);
 app.post("/v1/completions", adaptOpenAICompletion);

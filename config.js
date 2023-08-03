@@ -2,6 +2,7 @@
 export const SERVER_PORT = 3000; // Server port
 export const BASE_URL = `http://localhost:${SERVER_PORT}`;
 export const DEBUG = false; // Debug mode
+export const ADMIN_PASSWORD = "changeme";
 
 
 export const TIMEOUT_MS_BEFORE_GIVEUP = 30000; // calls to Azure will give up after 30s
@@ -38,6 +39,6 @@ export let AZURE_LLM_DEPLOYMENTS = [
     //     "api_key": "YOURVALUE"
     // },
     // ADD MORE KEYS HERE
-
+    
 
 ]

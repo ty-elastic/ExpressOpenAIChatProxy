@@ -23,6 +23,7 @@ TODO - not yet implemented
 
 Add your Azure keys to ```config.js```
 
+Adjust the settings to your liking and **change the  admin password**
 
 
 

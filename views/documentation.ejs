@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= data.pageTitle %></title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #333;
+      color: #fff;
+      padding: 10px;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    nav {
+      background-color: #555;
+      padding: 5px;
+    }
+
+    nav a {
+      color: #fff;
+      text-decoration: none;
+      padding: 5px 10px;
+    }
+
+    nav a:hover {
+      background-color: #777;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    section {
+      margin-bottom: 30px;
+    }
+
+    footer {
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      padding: 10px;
+    }
+  </style>
+    <!-- ... Other meta tags and styles ... -->
+  <!-- Add highlight.js from CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+  <!-- Initialize highlight.js -->
+  <script>hljs.initHighlightingOnLoad();</script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1><%= data.pageTitle %></h1>
+    </div>
+  </header>
+
+  <nav>
+    <div class="container">
+      <a href="#introduction">Introduction</a>
+      <a href="#rest">REST</a>
+      <a href="#python">Python</a>
+      <a href="#langchain">LangChain</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <section id="introduction">
+      <h2>Introduction</h2>
+      <p>
+        This server is a reverse proxy implemented in Express.  Find the source code here <a href="https://github.com/derickson/ExpressOpenAIChatProxy">on github<a/>
+      </p>
+      <pre>
+                                           ┌───────────────┐
+                                           │               │
+                                           │ Azure OpenAI  │
+                                       ┌───► Deployment    │
+                                       │   │               │
+  ┌───────────┐       ┌────────────┐   │   └───────────────┘
+  │           │       │            │   │          .
+  │ CLIENT    ├───────►  PROXY     ├───┤          .
+  │           │       │            │   │          .
+  └───────────┘       └────────────┘   │
+                                       │   ┌───────────────┐
+                                       │   │               │
+                                       │   │ Azure OpenAI  │
+                                       └───► Deployment    │
+                                           │               │
+                                           └───────────────┘
+      </pre>
+      <p>
+        This proxy takes in requests in OpenAI format and load balances to multiple LLM providers. Providers currently supported are { Azure OpenAI }.<br/>
+
+        Currently only the /vi/chat/completion endpoint of is supported.<br/>
+
+        This proxy currenty supports the following features
+        <ul>
+          <li>Daily auth key rotation</li>
+          <li>Allow users to use their key for X days after course</li>
+          <li>Per user request rate limiting</li>
+          <li>Random Load balancing to multiple keys</li>
+          <li>Concurrency Control for each available key</li>
+          <li>Simple most-recently used caching of query responses</li>
+        </ul>
+      </p>
+    </section>
+    <section id="rest">
+      <h2>REST</h2>
+      <p>
+        Call the proxy with a simple REST call.  Currently the auth key enforcement is <b><%= data.enforceKey ? "Enabled" : "Disabled" %></b><br/>
+        When auth key enforcement is enabled, provide a bearer token that is the instructor provided key + a short id of your choice to identify you to the instructor.
+      </p>
+      <pre><code class="bash">
+curl <%= data.baseURL %>/v1/chat/completions \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer ##KEY-PROVIDED-BY-INSTRUCTOR##-shortid" \
+-d '{
+  "model": "gpt-3.5-turbo",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You are a helpful assistant."
+    },
+    {
+      "role": "user",
+      "content": "Hello!"
+    }
+  ]
+}'
+    </code></pre>
+    </section>
+    <section id="python">
+      <h2>Python</h2>
+      <p>
+        Call the proxy with the Python OpenAI library.  Currently the auth key enforcement is <b><%= data.enforceKey ? "Enabled" : "Disabled" %></b><br/>
+        When auth key enforcement is enabled, provide a bearer token that is the instructor provided key + a short id of your choice to identify you to the instructor.
+      </p>
+      <pre><code class="python">
+        import openai
+        
+        # Load your API key from an environment variable or secret management service
+        openai.api_key = "##instructor-provided-key##-shortid"
+        openai.api_base = "<%= data.baseURL %>/v1"
+        
+        chat_completion = None
+        try:
+          chat_completion = openai.ChatCompletion.create(
+              model="gpt-3.5-turbo", 
+              messages=[
+                  {"role": "user", "content": "Hello world"}
+                  ]
+              )
+          print(chat_completion)
+        except openai.error.OpenAIError as e:
+            # Handle exceptions here, if any
+            print("Error occurred:", e)
+          </code></pre>
+    </section>
+    <section id="langchain">
+      <h2>LangChain</h2>
+      <p>
+        Call the proxy with the LangChain library.  Currently the auth key enforcement is <b><%= data.enforceKey ? "Enabled" : "Disabled" %></b><br/>
+        When auth key enforcement is enabled, provide a bearer token that is the instructor provided key + a short id of your choice to identify you to the instructor.
+      </p>
+      <pre><code class="python">
+        import os
+        import openai
+        from langchain.schema import HumanMessage
+        from langchain.chat_models import ChatOpenAI
+        openai.api_key = "##instructor-provided-key##-shortid"
+        openai.api_base = "<%= data.baseURL %>/v1"
+        
+        os.environ["OPENAI_API_KEY"] = openai.api_key
+        os.environ["OPENAI_API_BASE"] = openai.api_base
+        
+        openai_chat = ChatOpenAI()
+        
+        PROMPT = "Hello!"
+        
+        response = openai_chat([HumanMessage(content=PROMPT)]).content
+        print(response)
+          </code></pre>
+    </section>
+      
+      
+
+
+
+    </section>
+
+
+  <footer>
+    <div class="container">
+      LLM Proxy is &copy; 2023 Elasticsearch Inc. All rights reserved.
+
+      This proxy enables the use of third party generative AI tools, which are owned and operated by their respective owners. Elastic does not have any control over the third party tools and we have no responsibility or liability for their content, operation or use, nor for any loss or damage that may arise from your use of such tools. Please exercise caution when using AI tools with personal, sensitive or confidential information. Any data you submit may be used for AI training or other purposes. There is no guarantee that information you provide will be kept secure or confidential. You should familiarize yourself with the privacy practices and terms of use of any generative AI tools prior to use.
+
+      Elastic, Elasticsearch and associated marks are trademarks, logos or registered trademarks of Elasticsearch N.V. in the United States and other countries. All other company and product names are trademarks, logos or registered trademarks of their respective owners.
+    </div>
+  </footer>
+</body>
+</html>

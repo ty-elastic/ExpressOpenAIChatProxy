@@ -37,13 +37,14 @@ app.use(urlencoded({ extended: true }));
 // needed to track uptime
 app.locals.startTime = new Date();
 
-// Register routes
+// // Register routes
 app.all("/", async function (req, res) {
-    res.set("Content-Type", "application/json");
-    return res.status(200).send({
-        status: true,
-        message: `Proxy to OpenAI target: ${BASE_URL}/v1`
-    });
+    // res.set("Content-Type", "application/json");
+    // return res.status(200).send({
+    //     status: true,
+    //     message: `Proxy to OpenAI target: ${BASE_URL}/v1`
+    // });
+    return res.redirect("/docs");
 });
 
 const webConfig = {

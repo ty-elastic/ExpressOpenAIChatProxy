@@ -1,7 +1,7 @@
 {
-  "name": "chatgpt",
+  "name": "ExpressOpenAiChatProxy",
   "version": "1.0.0",
-  "description": "## If you have any questions or need assistance, please join  [[Discord](https://discord.pawan.krd)]",
+  "description": "## Custom Express proxy based on https://github.com/PawanOsman/ChatGPT ",
   "type": "module",
   "main": "index.js",
   "scripts": {
@@ -10,19 +10,20 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/PawanOsman/ChatGPT.git"
+    "url": "git+https://github.com/derickson/ExpressOpenAIChatProxy.git"
   },
-  "author": "PawanOsman <contact@pawan.krd> (https://pawan.krd/)",
+  "author": "Dave Erickson github: @derickson",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/PawanOsman/ChatGPT/issues"
+    "url": "https://github.com/derickson/ExpressOpenAIChatProxy/issues"
   },
-  "homepage": "https://github.com/PawanOsman/ChatGPT#readme",
+  "homepage": "https://github.com/derickson/ExpressOpenAIChatProxy",
   "dependencies": {
     "axios": "1.3.4",
     "crypto-js": "^4.1.1",
     "ejs": "^3.1.9",
     "elastic-apm-node": "^3.48.0",
+    "elastic-apm-node-logger": "^1.1.2",
     "express": "4.18.2",
     "openai": "3.2.1",
     "passport": "^0.6.0",

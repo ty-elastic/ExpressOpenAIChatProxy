@@ -5,24 +5,23 @@ export const DEBUG = false; // Debug mode
 export const ADMIN_PASSWORD = "changeme";
 
 
-export const TIMEOUT_MS_BEFORE_GIVEUP = 30000; // calls to Azure will give up after 30s
-
-export const CONCURRENT_PROMPTS = 2; // the number of users that can use a key at a time
+export const TIMEOUT_MS_BEFORE_GIVEUP = 15000; // calls to Azure will give up after 30s
+export const CONCURRENT_PROMPTS = 10; // the number of users that can use a key at a time
 
 // the in memory response cache
 export const CACHING_ENABLED = true; // use a cache of 100 most recent answers
 export const CACHE_SIZE = 100; // cache the 100 most recently used answers
 
 // controls for key cycling
-export const ENFORCE_PROXY_KEY = false; // set to false to stop key checks
+export const ENFORCE_PROXY_KEY = true; // set to false to stop key checks
 export const SALT = "AAAAAAA"; // Change the SALT to make the keys protected
-export const REVOKE_KEY_AFTER = 2; //keys will work for x days
+export const REVOKE_KEY_AFTER = 3; //keys will work for x days
 
 
-// Rate limit
+// Rate limit 
 export const ENABLE_RATE_LIMITER = true;
-export const PRIOD = 5 * 1000; // 15 seconds
-export const RATE_LIMIT = 5; // 50 requests per 15 seconds
+export const PRIOD = 5 * 1001; // 5 seconds
+export const RATE_LIMIT = 5; // 5 requests per 5 seconds
 
 // Whitelisted IPs
 export const WHITELISTED_IPS = [

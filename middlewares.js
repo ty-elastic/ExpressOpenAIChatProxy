@@ -1,6 +1,7 @@
 import { RATE_LIMIT, PRIOD, WHITELISTED_IPS } from "./config.js";
 import { DEBUG } from './config.js';
 
+
 const rateLimit = new Map();
 
 function corsMiddleware(req, res, next) {
@@ -45,7 +46,8 @@ async function rateLimitMiddleware(req, res, next) {
             let updatedCount = rateLimit.get(rate_key).requests + 1;
             if (updatedCount > RATE_LIMIT) {
                 if (DEBUG)  console.log("throttling key: ",rate_key)
-                req.app.locals.apm.setLabel("servedBy","throttle");
+                
+                req.app.locals.apm.setLabel("proxy_resp_category", "throttle");
                 return res.status(429).send( { "error": {
                     "message": "Rate limited. Too many requests to proxy from this IP and Key, please try again later",
                     "type": "server_error",
@@ -73,7 +75,18 @@ async function responseLogMiddleware(req, res, next) {
   res.send = function (data) {
     // Log the data being sent
     if(data?.usage && res?.deployment_name) {
-        console.log('Token usage', res.deployment_name, data.usage);
+
+        const telemetry = {
+            "servedby_deployment": res.deployment_name,
+            "completion_tokens": data.usage.completion_tokens,
+            "prompt_tokens": data.usage.prompt_tokens,
+            "total_tokens": data.usage.total_tokens
+        };
+
+        req.app.locals.apm.addLabels(telemetry, false);
+        req.app.locals.apm.setLabel("proxy_resp_category", "llm");
+
+        if(DEBUG) console.log(telemetry);
     }
     
 

@@ -56,6 +56,37 @@ function getFromCache(question){
 }
 
 
+axios.interceptors.response.use(undefined, (err) => {
+    const { config, message } = err;
+    if (!config || !config.retry) {
+      return Promise.reject(err);
+    }
+    // retry while Network timeout or Network Error
+    if (!(message.includes("timeout") || message.includes("429"))) {
+      return Promise.reject(err);
+    }
+    config.retry -= 1;
+
+    if(message.includes("timeout")) {
+        const delayRetryRequest = new Promise((resolve) => {
+            setTimeout(() => {
+              console.log("Axios TIMEOUT REACHED retry the request", config.url);
+              resolve();
+            }, config.noResponseDelay || 1000);
+          });
+          return delayRetryRequest.then(() => axios(config));
+    } else {
+        const delayRetryRequest = new Promise((resolve) => {
+            setTimeout(() => {
+              console.log("Upstream Rate Limiting Poosible retry the request", config.url);
+              resolve();
+            }, config.retryDelay || 1000);
+          });
+          return delayRetryRequest.then(() => axios(config));
+    }
+  });
+
+
 async function adaptOpenAIChatCompletion(req, res) {
 
     // get the OpenAI style auth header
@@ -80,7 +111,7 @@ async function adaptOpenAIChatCompletion(req, res) {
         const cache_reponse = getFromCache(req.body);
         if(cache_reponse){
             if(DEBUG) console.log("  Returning cached reponse")
-            req.app.locals.apm.setLabel("servedBy","cache");
+            req.app.locals.apm.setLabel("proxy_resp_category", "cache");
             return res.status(200).send(cache_reponse.data);
         }
     }
@@ -89,9 +120,8 @@ async function adaptOpenAIChatCompletion(req, res) {
     let deployment = null;
     try {
         deployment = getAzureAIDeployment();
-        req.app.locals.apm.setLabel("servedBy",deployment.deployment_name);
     } catch (e) {
-        req.app.locals.apm.setLabel("servedBy","semaphoresLocked");
+        req.app.locals.apm.setLabel("proxy_resp_category", "semaphoresLocked");
         return res.status(429).send( { "error": {
             "message": "Too many requests to proxy, all keys busy, please try again later",
             "type": "server_error",
@@ -165,10 +195,12 @@ async function adaptOpenAIChatCompletion(req, res) {
 
                     const errorResponseJson = JSON.parse(errorResponseStr);
                     deployment.semaphore.release();
+                    req.app.locals.apm.setLabel("proxy_resp_category", "error");
                     return res.status(error.response.status).send(errorResponseJson);
                 } else {
                     if (DEBUG) console.error("Could not JSON parse stream message", error);
                     deployment.semaphore.release();
+                    req.app.locals.apm.setLabel("proxy_resp_category", "error");
                     return res.status(500).send({
                         "error": {
                             "message": "Proxy Server Error",
@@ -179,6 +211,7 @@ async function adaptOpenAIChatCompletion(req, res) {
             catch (e) {
                 if (DEBUG) console.log(e);
                 deployment.semaphore.release();
+                req.app.locals.apm.setLabel("proxy_resp_category", "error");
                 return res.status(500).send({
                     "error": {
                         "message": "Proxy Server Error",
@@ -194,6 +227,9 @@ async function adaptOpenAIChatCompletion(req, res) {
                 new_url, req.body,
                 {
                     timeout: TIMEOUT_MS_BEFORE_GIVEUP,
+                    retry: 3, 
+                    retryDelay: 5000,
+                    noResponseDelay: 5000,
                     headers: {
                         Accept: "application/json",
                         "Content-Type": "application/json",
@@ -227,8 +263,10 @@ async function adaptOpenAIChatCompletion(req, res) {
 
                 if(error.response?.status && error.response?.data){
                     error.response.data.error.message = error.response.data.error.message.replace(/org-[a-zA-Z0-9]+/, orgId);
+                    req.app.locals.apm.setLabel("proxy_resp_category", "error");
                     return res.status(error.response.status).send(error.response.data);
                 } else {
+                    req.app.locals.apm.setLabel("proxy_resp_category", "error");
                     return res.status(500).send({
                         "error": {
                             "message": "Proxy Server Error",

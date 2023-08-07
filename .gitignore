@@ -8,3 +8,8 @@ dist/
 .parcel-cache
 db.json
 .env
+env
+logs.txt
+telemetry.log
+sincedb_telemetry.log
+logstash

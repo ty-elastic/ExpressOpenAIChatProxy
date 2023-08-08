@@ -12,6 +12,7 @@ The proxy is bearer token protected. instructors get the current token from the 
 
 This Proxy
 * only currently works for the /chat/completion part of OpenAI
+* only currently tested with ChatGPT 3.5 turbo
 * lets you specify multiple Azure keys
 * randomly load balances all requests across those keys
 * creates a semaphore for each key, so they only see one concurrent use
@@ -20,10 +21,8 @@ This Proxy
 * configurable concurrency for the semaphore
 
 TODO - not yet implemented
-* better emulation of OpenAI errors so that users get deeper information on why something didn't work, at present the errors are mostly obscured by the proxy.
 * more thorough testing for streaming responses
 * some internal backoff if all semaphores are taken
-* better telemetry on token usage to elastic dashboard
 * test and make work with elastic observability assistant
 * make work with huggingface inference
 

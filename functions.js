@@ -1,5 +1,5 @@
-import { DEBUG, CONCURRENT_PROMPTS, AZURE_LLM_DEPLOYMENTS, SALT, REVOKE_KEY_AFTER, ENFORCE_PROXY_KEY } from "./config.js";
-
+import { DEBUG, CONCURRENT_PROMPTS, AZURE_LLM_DEPLOYMENTS, SALT, REVOKE_KEY_AFTER, ENFORCE_PROXY_KEY, JWT_SECRET } from "./config.js";
+import * as jose from 'jose'
 import pkg from 'crypto-js';
 const { MD5 } = pkg;
 
@@ -60,12 +60,71 @@ function startsWithAny(a, b) {
     return false;
   }
 
-function checkAuth(authKey) {
+async function generateJwt(end, workshopId, start = undefined) {
+    const alg = 'HS256'
+    const jwt = new jose.SignJWT({ /* additional metadata, like rateLimit params */ })
+        .setProtectedHeader({ alg })
+        .setJti(workshopId)
+        .setExpirationTime(end / 1000);
+    if (start != undefined)
+        jwt.setNotBefore(start / 1000);
+    const signed = await jwt.sign(new TextEncoder().encode(JWT_SECRET));
+    return signed;
+}
+
+const INVALID_JWT = "invalid";
+const EXPIRED_JWT = "expired";
+const VALID_JWT = "valid";
+const CLOCK_TOLERANCE = 86400; // allow tokens to be valid up to 1 day after expiration
+async function checkAuthJwt(authKey) {
+    if (authKey.toLowerCase().startsWith("bearer "))
+        authKey = authKey.slice("bearer ".length);
+    try {
+        const {payload, protectedHeader} = await jose.jwtVerify(authKey, new TextEncoder().encode(JWT_SECRET), {"clockTolerance": CLOCK_TOLERANCE});
+        console.log({'validated key for workshop:': payload.jti});
+        return {'status': VALID_JWT, 'workshopId': payload.jti};
+    }
+    catch (err) {
+        if (err instanceof jose.errors.JOSEError) {
+            if ((err.code === 'ERR_JWT_INVALID') || (err.code === 'ERR_JWS_INVALID')) {
+                // likely a legacy key
+                return {'status': INVALID_JWT}
+            }
+            const claims = jose.decodeJwt(authKey)
+            if ((err.code === 'ERR_JWT_CLAIM_VALIDATION_FAILED') && (err.claim === 'nbf')) {
+                console.log('key is not yet valid for workshop:', claims.jti, ", valid date:", new Date(claims.nbf * 1000).toDateString())
+                return {'status': EXPIRED_JWT}
+            }
+            else if (err.code === 'ERR_JWT_EXPIRED') {
+                console.log('key is expired for workshop:', claims.jti, ", expiration date:", new Date(claims.exp * 1000).toDateString())
+                return {'status': EXPIRED_JWT}
+            }
+        }
+        else {
+            console.log('unable to validate key:', err)
+            return {'status': INVALID_JWT}
+        }
+    }
+}
+
+async function checkAuth(authKey) {
     if(!ENFORCE_PROXY_KEY) return true;
-    
-    let now = new Date();
-    let acceptableKeys = generateAccessKeyRange(now);
-    return startsWithAny(authKey, acceptableKeys);
+
+    // first check if this is a valid JWT; if it is, check status
+    const jwtStatus = await checkAuthJwt(authKey);
+    if (jwtStatus.status === VALID_JWT)
+        return true;
+    else if (jwtStatus.status === EXPIRED_JWT)
+        return false;
+    // not a JWT, fall through to legacy method
+    else {
+        console.log("validating legacy key")
+        // remove anything from the value that isn't an alphanumeric, _, -, or space to prevent injection attack
+        authKey = authKey.replace(/[^a-zA-Z0-9-_\s]/g, '');
+        let now = new Date();
+        let acceptableKeys = generateAccessKeyRange(now);
+        return startsWithAny(authKey, acceptableKeys);
+    }
 }
 
 async function* chunksToLines(chunksAsync) {
@@ -204,4 +263,5 @@ export {
     generateAccessKey, 
     generateAccessKeyRange, 
     checkAuth,
+    generateJwt
 }

@@ -26,7 +26,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 // functions, middleware and config we will use
-import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion, status } from './routes.js';
+import {  adaptOpenAIModels, adaptOpenAICompletion, adaptOpenAIChatCompletion, status, createAccessKey } from './routes.js';
 import { corsMiddleware, rateLimitMiddleware, loggingMiddleware, responseLogMiddleware } from './middlewares.js';
 import { DEBUG, SERVER_PORT, ENABLE_RATE_LIMITER, BASE_URL,ENFORCE_PROXY_KEY } from './config.js';
 
@@ -99,6 +99,7 @@ app.get('/docs', (req, res) => {
 
 // protected by admin password
 app.get("/status", passport.authenticate('basic', { session: false }), status);
+app.post("/key", passport.authenticate('basic', { session: false }), createAccessKey);
 
 // not impelemented
 app.get("/v1/models", adaptOpenAIModels);

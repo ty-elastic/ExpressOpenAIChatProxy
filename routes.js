@@ -8,6 +8,7 @@ import {
     generateAccessKey,
     generateAccessKeyRange, 
     checkAuth,
+    generateJwt
 } from "./functions.js"
 import { DEBUG, CACHING_ENABLED, CACHE_SIZE, TIMEOUT_MS_BEFORE_GIVEUP } from "./config.js";
 
@@ -91,11 +92,9 @@ async function adaptOpenAIChatCompletion(req, res) {
 
     // get the OpenAI style auth header
     let auth = req.headers['authorization'] ?? req.headers['Authorization'] ?? "unknown-auth";
-    // remove anything from the value that isn't an alphanumeric, _, -, or space to prevent injection attack
-    if(auth) auth = auth.replace(/[^a-zA-Z0-9-_\s]/g, '');
 
     // if key checking is turned on, check the key
-    if(!checkAuth(auth)){
+    if(!await checkAuth(auth)){
         return res.status(401).send( { "error": {
             "message": "Invalid authorization header",
             "type": "server_error",
@@ -314,8 +313,28 @@ function uptimeStrFromMs(ms) {
     return uptimeParts.join(', ');
 }
 
+async function createAccessKey(req,res) {
+    try {
+        console.log("creating access key for:", req.body);
+        let start = req.body['start'];
+        if (start != undefined)
+            start = Date.parse(start);
+        let end = req.body['end'];
+        if (end == undefined)
+            return res.status(400);
+        end = Date.parse(end);
+        const workshopId = req.body['workshopId'];
+        if (workshopId == undefined)
+            return res.status(400);
 
-
+        const jwt = await generateJwt(end, workshopId, start);
+        return res.status(200).send(jwt);
+    }
+    catch (err) {
+        console.log(err);
+        return res.status(400);
+    }
+}
 
 async function status(req,res) {
 
@@ -345,7 +364,8 @@ export {
     adaptOpenAIModels,
     adaptOpenAICompletion,
     adaptOpenAIChatCompletion,
-    status
+    status,
+    createAccessKey
 };
 
 

@@ -4,6 +4,7 @@ export const BASE_URL = `http://localhost:${SERVER_PORT}`;
 export const DEBUG = false; // Debug mode
 export const ADMIN_PASSWORD = "changeme";
 
+export const JWT_SECRET = 'changeme'
 
 export const TIMEOUT_MS_BEFORE_GIVEUP = 15000; // calls to Azure will give up after 30s
 export const CONCURRENT_PROMPTS = 10; // the number of users that can use a key at a time

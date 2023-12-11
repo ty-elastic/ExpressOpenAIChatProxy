@@ -3,8 +3,12 @@ const ELASTIC_APM_SERVICE_NAME = process.env.ELASTIC_APM_SERVICE_NAME;
 const ELASTIC_CLOUD_ID = process.env.ELASTIC_CLOUD_ID;
 const ELASTIC_API_KEY = process.env.ELASTIC_API_KEY;
 import apm from 'elastic-apm-node/start.js';
+import { v4 as uuidv4 } from 'uuid';
 
-
+//apm.start({
+    // set service node name to random string id
+    //serviceNodeName: uuidv4()
+//})
 
 //** THIS IS THE CODE THAT WILL PUT LOGS INTO APM directly */
 // import elasticApmLogger from 'elastic-apm-node-logger';
@@ -100,6 +104,11 @@ app.get('/docs', (req, res) => {
 // protected by admin password
 app.get("/status", passport.authenticate('basic', { session: false }), status);
 app.post("/key", passport.authenticate('basic', { session: false }), createAccessKey);
+
+// health endpoint
+app.get("/health", function (req, res) {
+    res.json({ status: "ok" });
+});
 
 // not impelemented
 app.get("/v1/models", adaptOpenAIModels);

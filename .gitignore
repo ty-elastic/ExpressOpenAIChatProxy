@@ -13,3 +13,5 @@ logs.txt
 telemetry.log
 sincedb_telemetry.log
 logstash
+provision.env
+llm-proxy.yaml

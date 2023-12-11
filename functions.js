@@ -78,7 +78,11 @@ const VALID_JWT = "valid";
 const CLOCK_TOLERANCE = 86400; // allow tokens to be valid up to 1 day after expiration
 async function checkAuthJwt(authKey) {
     if (authKey.toLowerCase().startsWith("bearer "))
-        authKey = authKey.slice("bearer ".length);
+        authKey = authKey.slice("bearer ".length)
+    // our notebooks may append a hash after the JWT (for rate-limiting); ignore it here
+    const spacePos = authKey.indexOf(' ')
+    if (spacePos != -1)
+        authKey = authKey.slice(0, spacePos)
     try {
         const {payload, protectedHeader} = await jose.jwtVerify(authKey, new TextEncoder().encode(JWT_SECRET), {"clockTolerance": CLOCK_TOLERANCE});
         console.log({'validated key for workshop:': payload.jti});
@@ -100,10 +104,8 @@ async function checkAuthJwt(authKey) {
                 return {'status': EXPIRED_JWT}
             }
         }
-        else {
-            console.log('unable to validate key:', err)
-            return {'status': INVALID_JWT}
-        }
+        console.log('unable to validate key:', err)
+        return {'status': INVALID_JWT}
     }
 }
 

@@ -1,8 +1,6 @@
-# syntax=docker/dockerfile:1
-
 FROM node:18-alpine
 ENV NODE_ENV=production
-ENV ELASTIC_APM_SERVICE_NAME=node-llm-proxy
+ENV ELASTIC_APM_SERVICE_NAME=llm-proxy
 
 WORKDIR /app
 

@@ -33,6 +33,14 @@ async function static_tests() {
         throw "jwt auth failed 3";
     }
 
+    if (!await checkAuth(jwt + " abc123")) {
+        throw "jwt auth failed 3";
+    }
+
+    if (!await checkAuth("Bearer " + jwt + " abc123")) {
+        throw "jwt auth failed 3";
+    }
+
     jwt = await generateJwt(Date.parse("1975-05-11"), "abc123");
     if (await checkAuth("Bearer " + jwt)) {
         throw "jwt auth failed 4";

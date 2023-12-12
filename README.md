@@ -70,6 +70,12 @@ and then
 bash runDocker.sh
 ```
 
+### to deploy to Google Cloud Run
+
+```bash
+bash deploy.sh
+```
+
 ### to test
 
 use the api by sending queries to

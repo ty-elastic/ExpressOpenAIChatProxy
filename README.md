@@ -70,10 +70,29 @@ and then
 bash runDocker.sh
 ```
 
-### to deploy to Google Cloud Run
+### Deployment to Google Cloud Run
 
-```bash
-bash deploy.sh
+To deploy this service to Google Cloud Run (production), you will need [gcloud tooling](https://cloud.google.com/sdk/gcloud), [Docker](https://www.docker.com/products/docker-desktop/), and `sed` (likely already available from your OS). This deployment script requires that the following environmental variables be set in a local file (not checked in) called `provision.env`:
+
+```
+GCP_PROJECT_ID=
+GCP_REGION=
+GCP_LABELS_DIVISION=
+GCP_LABELS_ORG=
+GCP_LABELS_TEAM=
+
+BASE_URL=
+```
+
+For Elasticians, you can download the latest set of variables used for deployment from Google Secrets via:
+```
+gcloud secrets versions access latest --secret=llm_proxy_provision > provision.env
+```
+
+From there, execute `./deploy.sh` to build the dockerfile locally, upload it to Google's container registry, and then deploy or re-deploy the Cloud Run instance.
+
+```
+./deploy.sh
 ```
 
 ### to test

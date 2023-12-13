@@ -73,21 +73,25 @@ async function responseLogMiddleware(req, res, next) {
 
   // Create a new function for res.send to intercept the data being sent
   res.send = function (data) {
-    // Log the data being sent
+    
+
     if(data?.usage && res?.deployment_name) {
 
         const telemetry = {
-            "servedby_deployment": res.deployment_name,
-            "completion_tokens": data.usage.completion_tokens,
-            "prompt_tokens": data.usage.prompt_tokens,
-            "total_tokens": data.usage.total_tokens
+            "proxy_servedby_deployment": res.deployment_name,
+            "proxy_response_tokens": data.usage.completion_tokens,
+            "proxy_prompt_tokens": data.usage.prompt_tokens,
+            "proxy_total_tokens": data.usage.total_tokens
         };
 
         req.app.locals.apm.addLabels(telemetry, false);
         req.app.locals.apm.setLabel("proxy_resp_category", "llm");
 
-        if(DEBUG) console.log(telemetry);
-    }
+        // Log the data being sent
+        if(DEBUG) {
+            console.log("Proxy telemetry:",telemetry);
+        }
+    } 
     
 
     // Call the original res.send function to send the response as usual

@@ -39,9 +39,12 @@ Adjust the settings to your liking and **change the  admin password**
 
 setup a .env file that looks like this
 ```bash
+export BASE_URL=http://localhost:3000
 export ELASTIC_APM_SERVICE_NAME=local-llm-proxy
 export ELASTIC_APM_SECRET_TOKEN=<your key>
 export ELASTIC_APM_SERVER_URL=<your apm server>
+export ADMIN_PASSWORD=<your admin password for status page>
+export SALT=<your salt>
 ```
 
 ```bash
